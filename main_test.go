@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,6 +20,26 @@ func readFromTestServer() ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	return io.ReadAll(resp.Body)
+}
+
+func waitForServerToStart() error {
+	checkTicker := time.NewTicker(1 * time.Second)
+	defer checkTicker.Stop()
+	timeoutTicker := time.NewTicker(10 * time.Second)
+	defer timeoutTicker.Stop()
+	for {
+		select {
+		case <-checkTicker.C:
+			_, err := http.Get("http://localhost:8080")
+			if err != nil {
+				continue
+			}
+			return nil
+		case <-timeoutTicker.C:
+			return fmt.Errorf("failed to reach test server in time")
+		}
+	}
+
 }
 
 // TestListenAndServeFileUpdate checks that updating a file's content will make
@@ -33,6 +55,7 @@ func TestListenAndServeFileUpdate(t *testing.T) {
 		log.Fatal(err)
 	}
 	go listenAndServe(tmpfile.Name(), "8080")
+	waitForServerToStart()
 	// Get from server to verify we are serving the content
 	resp, err := readFromTestServer()
 	if err != nil {
