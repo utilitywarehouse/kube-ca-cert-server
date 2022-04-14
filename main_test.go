@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,6 +22,26 @@ func readFromTestServer() ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
+func waitForServerToStart() error {
+	checkTicker := time.NewTicker(1 * time.Second)
+	defer checkTicker.Stop()
+	timeoutTicker := time.NewTicker(10 * time.Second)
+	defer timeoutTicker.Stop()
+	for {
+		select {
+		case <-checkTicker.C:
+			_, err := http.Get("http://localhost:8080")
+			if err != nil {
+				continue
+			}
+			return nil
+		case <-timeoutTicker.C:
+			return fmt.Errorf("failed to reach test server in time")
+		}
+	}
+
+}
+
 // TestListenAndServeFileUpdate checks that updating a file's content will make
 // the server to actually refresh and serve the updated
 func TestListenAndServeFileUpdate(t *testing.T) {
@@ -34,7 +55,7 @@ func TestListenAndServeFileUpdate(t *testing.T) {
 		log.Fatal(err)
 	}
 	go listenAndServe(tmpfile.Name(), "8080")
-	time.Sleep(1) // Sleep to allow some time for the server to come up
+	waitForServerToStart()
 	// Get from server to verify we are serving the content
 	resp, err := readFromTestServer()
 	if err != nil {
