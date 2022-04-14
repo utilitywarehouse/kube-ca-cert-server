@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -33,6 +34,7 @@ func TestListenAndServeFileUpdate(t *testing.T) {
 		log.Fatal(err)
 	}
 	go listenAndServe(tmpfile.Name(), "8080")
+	time.Sleep(1) // Sleep to allow some time for the server to come up
 	// Get from server to verify we are serving the content
 	resp, err := readFromTestServer()
 	if err != nil {
