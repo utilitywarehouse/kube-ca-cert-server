@@ -54,7 +54,8 @@ func TestListenAndServeFileUpdate(t *testing.T) {
 	if _, err := tmpfile.Write(content); err != nil {
 		log.Fatal(err)
 	}
-	go listenAndServe(tmpfile.Name(), "8080")
+	server := newServer(tmpfile.Name(), "8080")
+	go server.ListenAndServe()
 	waitForServerToStart()
 	// Get from server to verify we are serving the content
 	resp, err := readFromTestServer()
