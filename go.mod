@@ -1,6 +1,6 @@
 module github.com/utilitywarehouse/kube-ca-cert-server
 
-go 1.20
+go 1.26.5
 
 require (
 	github.com/prometheus/client_golang v1.16.0
